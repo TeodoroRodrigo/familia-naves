@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Família Naves — Mapa de Migração</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parchment: #f5efe0;
+    --ink: #1a1208;
+    --sepia: #8b6914;
+    --rust: #9b3a1a;
+    --gold: #c9921a;
+    --fade: #d4b483;
+    --portugal: #2d5a27;
+    --sp: #8b3a1a;
+    --mg: #1a4a7a;
+    --go: #6b2d7a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: 'Crimson Pro', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  header {
+    text-align: center;
+    padding: 40px 24px 24px;
+    border-bottom: 2px solid var(--fade);
+  }
+
+  header::after {
+    content: '✦ ✦ ✦';
+    display: block;
+    color: var(--gold);
+    font-size: 12px;
+    letter-spacing: 8px;
+    margin-top: 10px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(22px, 4vw, 42px);
+    font-weight: 400;
+  }
+
+  h1 em { color: var(--rust); font-style: italic; }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--sepia);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    min-height: calc(100vh - 180px);
+  }
+
+  @media (max-width: 768px) {
+    .main { grid-template-columns: 1fr; }
+  }
+
+  /* MAP */
+  .map-panel {
+    position: relative;
+    background: #e8dfc8;
+    border: 1px solid var(--fade);
+    border-right: none;
+    overflow: hidden;
+    min-height: 560px;
+  }
+
+  .map-panel svg {
+    width: 100%;
+    height: 100%;
+    min-height: 560px;
+  }
+
+  /* TIMELINE PANEL */
+  .timeline-panel {
+    background: #faf4e8;
+    border: 1px solid var(--fade);
+    overflow-y: auto;
+    max-height: 700px;
+  }
+
+  .timeline-header {
+    padding: 20px 24px 12px;
+    border-bottom: 1px solid var(--fade);
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    color: var(--sepia);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    position: sticky;
+    top: 0;
+    background: #faf4e8;
+    z-index: 10;
+  }
+
+  .timeline-item {
+    padding: 16px 24px;
+    border-bottom: 1px dashed var(--fade);
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+    padding-left: 48px;
+  }
+
+  .timeline-item:hover, .timeline-item.active {
+    background: #f0e6cc;
+  }
+
+  .timeline-dot {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--parchment);
+    box-shadow: 0 0 0 1px currentColor;
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 25px;
+    top: 32px;
+    bottom: -1px;
+    width: 1px;
+    background: var(--fade);
+  }
+
+  .timeline-item:last-child::before { display: none; }
+
+  .timeline-era {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .timeline-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  .timeline-desc {
+    font-size: 12px;
+    color: var(--sepia);
+    margin-top: 4px;
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  .timeline-gens {
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  /* Pulse animation for active location */
+  @keyframes pulse {
+    0%, 100% { r: 10; opacity: 0.3; }
+    50% { r: 18; opacity: 0; }
+  }
+
+  .loc-pulse {
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  /* Path drawing animation */
+  .migration-path {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    transition: stroke-dashoffset 1s ease;
+  }
+
+  .migration-path.drawn {
+    stroke-dashoffset: 0;
+  }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 16px 24px;
+    border-top: 1px solid var(--fade);
+    font-size: 12px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="subtitle">Mapa de Migração · 1624 — 1990</div>
+  <h1>Família <em>Naves</em> no Brasil</h1>
+  <div class="subtitle">Portugal → São Paulo → Minas Gerais → Goiás</div>
+</header>
+
+<div class="main">
+  <div class="map-panel">
+    <svg viewBox="0 0 600 700" xmlns="http://www.w3.org/2000/svg" id="mapSvg">
+      <!-- Background texture -->
+      <defs>
+        <filter id="paper">
+          <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="5" result="noise"/>
+          <feDiffuseLighting in="noise" lighting-color="#e8dfc8" surfaceScale="2" result="light">
+            <feDistantLight azimuth="45" elevation="60"/>
+          </feDiffuseLighting>
+          <feBlend in="SourceGraphic" in2="light" mode="multiply"/>
+        </filter>
+        <marker id="arrowGold" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#c9921a" opacity="0.7"/>
+        </marker>
+        <marker id="arrowRust" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#9b3a1a" opacity="0.7"/>
+        </marker>
+      </defs>
+
+      <!-- Ocean background -->
+      <rect width="600" height="700" fill="#c8d8e8" opacity="0.3"/>
+
+      <!-- Brazil simplified outline -->
+      <!-- Norte -->
+      <path d="M 80,50 L 200,40 L 320,60 L 380,80 L 400,120 L 380,150 L 350,160 L 320,140 L 280,150 L 260,130 L 220,140 L 200,160 L 180,150 L 140,170 L 100,160 L 80,140 L 60,100 Z"
+        fill="#d4c4a0" stroke="#b8a060" stroke-width="1" opacity="0.7"/>
+
+      <!-- Nordeste -->
+      <path d="M 320,60 L 380,80 L 420,100 L 460,140 L 480,180 L 460,210 L 420,220 L 400,200 L 380,210 L 360,190 L 340,200 L 320,180 L 300,160 L 320,140 L 350,160 L 380,150 L 400,120 Z"
+        fill="#d4c4a0" stroke="#b8a060" stroke-width="1" opacity="0.7"/>
+
+      <!-- Centro-Oeste (GO, MT, MS) -->
+      <path d="M 140,270 L 180,250 L 220,240 L 280,250 L 320,240 L 360,260 L 380,290 L 370,330 L 340,350 L 300,360 L 260,370 L 220,360 L 180,370 L 150,350 L 130,320 L 130,290 Z"
+        fill="#c8b890" stroke="#b8a060" stroke-width="1" opacity="0.8"/>
+
+      <!-- MG / SP / RJ area -->
+      <path d="M 220,360 L 260,370 L 300,360 L 340,350 L 370,330 L 390,350 L 410,380 L 400,420 L 370,440 L 330,450 L 290,460 L 250,455 L 210,440 L 190,410 L 180,380 L 200,365 Z"
+        fill="#d4c8a8" stroke="#b8a060" stroke-width="1" opacity="0.9"/>
+
+      <!-- Sul -->
+      <path d="M 210,440 L 250,455 L 290,460 L 330,450 L 360,460 L 370,490 L 350,530 L 310,560 L 270,570 L 230,555 L 200,530 L 190,490 L 195,460 Z"
+        fill="#d4c8a8" stroke="#b8a060" stroke-width="1" opacity="0.7"/>
+
+      <!-- State labels -->
+      <text x="240" y="310" font-family="Crimson Pro, serif" font-size="13" fill="#8b6914" opacity="0.8" text-anchor="middle" font-style="italic">Goiás</text>
+      <text x="310" y="410" font-family="Crimson Pro, serif" font-size="13" fill="#8b6914" opacity="0.8" text-anchor="middle" font-style="italic">Minas Gerais</text>
+      <text x="290" y="490" font-family="Crimson Pro, serif" font-size="13" fill="#8b6914" opacity="0.8" text-anchor="middle" font-style="italic">São Paulo</text>
+
+      <!-- Ocean label -->
+      <text x="510" y="400" font-family="Crimson Pro, serif" font-size="11" fill="#6090b0" opacity="0.6" text-anchor="middle" font-style="italic" transform="rotate(-90, 510, 400)">Oceano Atlântico</text>
+
+      <!-- MIGRATION PATHS -->
+      <!-- Portugal to SP (curved, dashed - ocean crossing) -->
+      <path id="path-pt-sp" class="migration-path"
+        d="M 540,230 Q 480,320 300,480"
+        stroke="#9b3a1a" stroke-width="2" stroke-dasharray="8,5" fill="none" opacity="0.8"
+        marker-end="url(#arrowRust)"/>
+
+      <!-- SP to MG -->
+      <path id="path-sp-mg" class="migration-path"
+        d="M 300,480 Q 320,450 320,410"
+        stroke="#c9921a" stroke-width="2" stroke-dasharray="6,4" fill="none" opacity="0.8"
+        marker-end="url(#arrowGold)"/>
+
+      <!-- Lavras to Bom Sucesso -->
+      <path id="path-lavras-bs" class="migration-path"
+        d="M 310,415 Q 305,400 300,390"
+        stroke="#c9921a" stroke-width="1.5" stroke-dasharray="5,3" fill="none" opacity="0.7"
+        marker-end="url(#arrowGold)"/>
+
+      <!-- MG to GO (Uberlandia to Morrinhos) -->
+      <path id="path-mg-go" class="migration-path"
+        d="M 290,375 Q 270,355 255,325"
+        stroke="#6b2d7a" stroke-width="2" stroke-dasharray="6,4" fill="none" opacity="0.8"
+        marker-end="url(#arrowGold)"/>
+
+      <!-- Morrinhos to Quirinópolis -->
+      <path id="path-morrinhos-q" class="migration-path"
+        d="M 252,322 Q 235,315 220,308"
+        stroke="#6b2d7a" stroke-width="1.5" stroke-dasharray="5,3" fill="none" opacity="0.7"
+        marker-end="url(#arrowGold)"/>
+
+      <!-- LOCATIONS -->
+
+      <!-- Portugal -->
+      <g id="loc-portugal" class="location" data-step="0" style="cursor:pointer" onclick="activateStep(0)">
+        <circle cx="540" cy="230" r="24" fill="#2d5a27" opacity="0.1"/>
+        <circle cx="540" cy="230" r="12" fill="#2d5a27" opacity="0.2"/>
+        <circle cx="540" cy="230" r="6" fill="#2d5a27"/>
+        <text x="540" y="218" font-family="Playfair Display, serif" font-size="11" fill="#2d5a27" text-anchor="middle" font-weight="700">Portugal</text>
+        <text x="540" y="249" font-family="Crimson Pro, serif" font-size="9" fill="#2d5a27" text-anchor="middle" font-style="italic">Vila de Algodres, 1624</text>
+      </g>
+
+      <!-- São Paulo (Santana de Parnaíba) -->
+      <g id="loc-sp" class="location" data-step="1" style="cursor:pointer" onclick="activateStep(1)">
+        <circle cx="300" cy="480" r="6" fill="#8b3a1a" class="loc-pulse-target"/>
+        <text x="300" y="468" font-family="Playfair Display, serif" font-size="11" fill="#8b3a1a" text-anchor="middle" font-weight="700">São Paulo</text>
+        <text x="300" y="496" font-family="Crimson Pro, serif" font-size="9" fill="#8b3a1a" text-anchor="middle" font-style="italic">Santana de Parnaíba, c. 1653</text>
+      </g>
+
+      <!-- Lavras MG -->
+      <g id="loc-lavras" class="location" data-step="2" style="cursor:pointer" onclick="activateStep(2)">
+        <circle cx="315" cy="415" r="6" fill="#1a4a7a"/>
+        <text x="340" y="411" font-family="Playfair Display, serif" font-size="11" fill="#1a4a7a" text-anchor="start" font-weight="700">Lavras, MG</text>
+        <text x="340" y="423" font-family="Crimson Pro, serif" font-size="9" fill="#1a4a7a" text-anchor="start" font-style="italic">c. 1760–1830</text>
+      </g>
+
+      <!-- Bom Sucesso MG -->
+      <g id="loc-bomsucesso" class="location" data-step="3" style="cursor:pointer" onclick="activateStep(3)">
+        <circle cx="300" cy="395" r="5" fill="#1a4a7a"/>
+        <text x="270" y="391" font-family="Playfair Display, serif" font-size="10" fill="#1a4a7a" text-anchor="end" font-weight="700">Bom Sucesso, MG</text>
+        <text x="270" y="401" font-family="Crimson Pro, serif" font-size="9" fill="#1a4a7a" text-anchor="end" font-style="italic">c. 1826–1877</text>
+      </g>
+
+      <!-- Uberlândia MG -->
+      <g id="loc-uberlandia" class="location" data-step="4" style="cursor:pointer" onclick="activateStep(4)">
+        <circle cx="290" cy="375" r="6" fill="#1a4a7a"/>
+        <text x="305" y="372" font-family="Playfair Display, serif" font-size="11" fill="#1a4a7a" text-anchor="start" font-weight="700">Uberlândia, MG</text>
+        <text x="305" y="382" font-family="Crimson Pro, serif" font-size="9" fill="#1a4a7a" text-anchor="start" font-style="italic">c. 1866–1938</text>
+      </g>
+
+      <!-- Morrinhos GO -->
+      <g id="loc-morrinhos" class="location" data-step="5" style="cursor:pointer" onclick="activateStep(5)">
+        <circle cx="252" cy="322" r="6" fill="#6b2d7a"/>
+        <text x="238" y="318" font-family="Playfair Display, serif" font-size="11" fill="#6b2d7a" text-anchor="end" font-weight="700">Morrinhos, GO</text>
+        <text x="238" y="328" font-family="Crimson Pro, serif" font-size="9" fill="#6b2d7a" text-anchor="end" font-style="italic">c. 1883–1938</text>
+      </g>
+
+      <!-- Quirinópolis GO -->
+      <g id="loc-quirinopolis" class="location" data-step="6" style="cursor:pointer" onclick="activateStep(6)">
+        <circle cx="220" cy="308" r="7" fill="#6b2d7a"/>
+        <text x="205" y="303" font-family="Playfair Display, serif" font-size="11" fill="#6b2d7a" text-anchor="end" font-weight="700">Quirinópolis, GO</text>
+        <text x="205" y="316" font-family="Crimson Pro, serif" font-size="9" fill="#6b2d7a" text-anchor="end" font-style="italic">c. 1926 — hoje</text>
+      </g>
+
+      <!-- Scale / compass rose -->
+      <g transform="translate(520, 620)">
+        <circle cx="0" cy="0" r="18" fill="none" stroke="#8b6914" stroke-width="1" opacity="0.5"/>
+        <text x="0" y="-22" font-family="Crimson Pro, serif" font-size="10" fill="#8b6914" text-anchor="middle" opacity="0.7">N</text>
+        <line x1="0" y1="-15" x2="0" y2="15" stroke="#8b6914" stroke-width="1" opacity="0.5"/>
+        <line x1="-15" y1="0" x2="15" y2="0" stroke="#8b6914" stroke-width="1" opacity="0.5"/>
+        <polygon points="0,-14 3,-5 0,-8 -3,-5" fill="#8b6914" opacity="0.7"/>
+      </g>
+
+      <!-- Decorative border -->
+      <rect x="4" y="4" width="592" height="692" fill="none" stroke="#8b6914" stroke-width="1.5" opacity="0.4"/>
+      <rect x="10" y="10" width="580" height="680" fill="none" stroke="#8b6914" stroke-width="0.5" opacity="0.3"/>
+    </svg>
+  </div>
+
+  <div class="timeline-panel">
+    <div class="timeline-header">Linha do Tempo</div>
+
+    <div class="timeline-item active" onclick="activateStep(0)">
+      <div class="timeline-dot" style="color: #2d5a27; background: #2d5a27;"></div>
+      <div class="timeline-era" style="color: #2d5a27;">Origem · 1624</div>
+      <div class="timeline-title">Portugal — Vila de Algodres</div>
+      <div class="timeline-desc">João de Almeida Naves nasce em Fornos de Algodres, Serra da Estrela, Bispado de Viseu. Família portuguesa.</div>
+      <div class="timeline-gens">Geração 0 — Ancestrais portugueses</div>
+    </div>
+
+    <div class="timeline-item" onclick="activateStep(1)">
+      <div class="timeline-dot" style="color: #8b3a1a; background: #8b3a1a;"></div>
+      <div class="timeline-era" style="color: #8b3a1a;">1ª Geração · c. 1653</div>
+      <div class="timeline-title">São Paulo — Santana de Parnaíba</div>
+      <div class="timeline-desc">João casa com Maria da Silva Leite, brasileira. Início da família Naves no Brasil. Época dos bandeirantes paulistas.</div>
+      <div class="timeline-gens">1ª Geração · João + Maria</div>
+    </div>
+
+    <div class="timeline-item" onclick="activateStep(1)">
+      <div class="timeline-dot" style="color: #8b3a1a; background: #8b6040;"></div>
+      <div class="timeline-era" style="color: #8b3a1a;">2ª Geração · c. 1654–1690</div>
+      <div class="timeline-title">São Paulo — Filhos de João e Maria</div>
+      <div class="timeline-desc">Dez filhos nascem em São Paulo e Santana de Parnaíba. Expansão paulista em direção ao interior.</div>
+      <div class="timeline-gens">2ª Geração · Baltasar, João, Joana, Maria, Izabel, José, Florência, Turíbia, Luís, Úrsula</div>
+    </div>
+
+    <div class="timeline-item" onclick="activateStep(2)">
+      <div class="timeline-dot" style="color: #1a4a7a; background: #1a4a7a;"></div>
+      <div class="timeline-era" style="color: #1a4a7a;">3ª Geração · c. 1715</div>
+      <div class="timeline-title">Minas Gerais — Lavras</div>
+      <div class="timeline-desc">Luzia Moreira da Fonseca nasce em Santana de Parnaíba. Família migra para MG — era do ouro e da mineração em Minas.</div>
+      <div class="timeline-gens">3ª Geração · Luzia + João Vieira da Cunha</div>
+    </div>
+
+    <div class="timeline-item" onclick="activateStep(2)">
+      <div class="timeline-dot" style="color: #1a4a7a; background: #2a6a9a;"></div>
+      <div class="timeline-era" style="color: #1a4a7a;">4ª–5ª Geração · 1760–1830</div>
+      <div class="timeline-title">Minas Gerais — Lavras e arredores</div>
+      <div class="timeline-desc">João Naves Damasceno nasce em Lavras. Casa com Anna Vittoria de São Thomé. Família estabelecida em MG. 10+ filhos documentados.</div>
+      <div class="timeline-gens">4ª–5ª Geração · João Damasceno → 10 filhos</div>
+    </div>
+
+    <div class="timeline-item" onclick="activateStep(3)">
+      <div class="timeline-dot" style="color: #1a4a7a; background: #3a7aaa;"></div>
+      <div class="timeline-era" style="color: #1a4a7a;">6ª–7ª Geração · 1826–1877</div>
+      <div class="timeline-title">Bom Sucesso, MG</div>
+      <div class="timeline-desc">Manoel Antônio Naves e filhos vivem em Bom Sucesso. Umbelina Rosa Naves (1831–1892) casa com Francisco de Paula Naves.</div>
+      <div class="timeline-gens">6ª–7ª Geração · Manoel, Umbelina, Francisco</div>
+    </div>
+
+    <div class="timeline-item" onclick="activateStep(4)">
+      <div class="timeline-dot" style="color: #1a4a7a; background: #4a8aba;"></div>
+      <div class="timeline-era" style="color: #1a4a7a;">7ª–8ª Geração · 1866–1938</div>
+      <div class="timeline-title">Uberlândia, MG</div>
+      <div class="timeline-desc">Américo Brasiliense Naves (1868) e Messias Brasiliense Naves (1883) nascem em Uberlândia. Ponto de transição para Goiás.</div>
+      <div class="timeline-gens">7ª–8ª Geração · Américo, Messias e irmãos</div>
+    </div>
+
+    <div class="timeline-item" onclick="activateStep(5)">
+      <div class="timeline-dot" style="color: #6b2d7a; background: #6b2d7a;"></div>
+      <div class="timeline-era" style="color: #6b2d7a;">8ª–9ª Geração · 1883–1938</div>
+      <div class="timeline-title">Morrinhos, Goiás</div>
+      <div class="timeline-desc">Messias Brasiliense Naves migra de MG para Morrinhos, GO. Primeira geração goiana. Casa com Purcina Maria de Jesus e depois Maria José Pereira.</div>
+      <div class="timeline-gens">8ª–9ª Geração · Messias e filhos</div>
+    </div>
+
+    <div class="timeline-item" onclick="activateStep(6)">
+      <div class="timeline-dot" style="color: #6b2d7a; background: #8b4d9a;"></div>
+      <div class="timeline-era" style="color: #6b2d7a;">9ª–11ª Geração · 1926 — hoje</div>
+      <div class="timeline-title">Quirinópolis e Goiânia, GO</div>
+      <div class="timeline-desc">Anésia Naves e filhos estabelecem raízes em Quirinópolis. Gilmar Alves da Silva (1958) — 10ª geração. Fábio, Bruno e Rodrigo — 11ª geração.</div>
+      <div class="timeline-gens">10ª–11ª Geração · Gilmar e filhos</div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-dot" style="background: #2d5a27;"></div>
+    <span>Portugal (origem)</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-dot" style="background: #8b3a1a;"></div>
+    <span>São Paulo (1ª–2ª geração)</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-dot" style="background: #1a4a7a;"></div>
+    <span>Minas Gerais (3ª–8ª geração)</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-dot" style="background: #6b2d7a;"></div>
+    <span>Goiás (8ª–11ª geração)</span>
+  </div>
+  <div style="margin-left: auto; font-size: 11px; color: var(--sepia); font-style: italic;">
+    Clique nos locais do mapa ou nos itens da linha do tempo
+  </div>
+</div>
+
+<script>
+const steps = [
+  { paths: [], locations: ['loc-portugal'] },
+  { paths: ['path-pt-sp'], locations: ['loc-portugal', 'loc-sp'] },
+  { paths: ['path-pt-sp', 'path-sp-mg'], locations: ['loc-sp', 'loc-lavras'] },
+  { paths: ['path-pt-sp', 'path-sp-mg', 'path-lavras-bs'], locations: ['loc-lavras', 'loc-bomsucesso'] },
+  { paths: ['path-pt-sp', 'path-sp-mg', 'path-lavras-bs'], locations: ['loc-bomsucesso', 'loc-uberlandia'] },
+  { paths: ['path-pt-sp', 'path-sp-mg', 'path-lavras-bs', 'path-mg-go'], locations: ['loc-uberlandia', 'loc-morrinhos'] },
+  { paths: ['path-pt-sp', 'path-sp-mg', 'path-lavras-bs', 'path-mg-go', 'path-morrinhos-q'], locations: ['loc-morrinhos', 'loc-quirinopolis'] },
+];
+
+let currentStep = 0;
+
+function activateStep(step) {
+  currentStep = step;
+
+  // Reset all paths
+  document.querySelectorAll('.migration-path').forEach(p => p.classList.remove('drawn'));
+
+  // Draw paths for this step
+  steps[step].paths.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      // Force reflow
+      el.classList.remove('drawn');
+      setTimeout(() => el.classList.add('drawn'), 50);
+    }
+  });
+
+  // Highlight locations
+  document.querySelectorAll('.location circle:not(.loc-pulse)').forEach(c => {
+    c.style.opacity = '0.3';
+  });
+
+  steps[step].locations.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.querySelectorAll('circle').forEach(c => c.style.opacity = '1');
+    }
+  });
+
+  // Timeline items
+  document.querySelectorAll('.timeline-item').forEach((item, i) => {
+    item.classList.remove('active');
+    if (i <= step + Math.min(step, 1)) item.classList.add('active');
+  });
+}
+
+// Initial state: draw all paths
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.querySelectorAll('.migration-path').forEach(p => p.classList.add('drawn'));
+  }, 300);
+});
+
+// Click on timeline items activates progressively
+document.querySelectorAll('.timeline-item').forEach((item, i) => {
+  item.onclick = () => activateStep(Math.min(i, steps.length - 1));
+});
+</script>
+</body>
+</html>

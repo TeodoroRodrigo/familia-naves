@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Família Naves — Árvore Genealógica</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parchment: #f5efe0;
+    --ink: #1a1208;
+    --sepia: #8b6914;
+    --rust: #9b3a1a;
+    --gold: #c9921a;
+    --fade: #d4b483;
+    --line: #8b6914aa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: 'Crimson Pro', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  header {
+    text-align: center;
+    padding: 48px 24px 32px;
+    border-bottom: 2px solid var(--fade);
+    position: relative;
+  }
+
+  header::after {
+    content: '✦ ✦ ✦';
+    display: block;
+    color: var(--gold);
+    font-size: 12px;
+    letter-spacing: 8px;
+    margin-top: 12px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 400;
+    color: var(--ink);
+    letter-spacing: 2px;
+  }
+
+  h1 em {
+    color: var(--rust);
+    font-style: italic;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--sepia);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    flex-wrap: wrap;
+  }
+
+  .gen-btn {
+    background: transparent;
+    border: 1px solid var(--fade);
+    color: var(--sepia);
+    font-family: 'Crimson Pro', serif;
+    font-size: 13px;
+    padding: 6px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .gen-btn:hover, .gen-btn.active {
+    background: var(--sepia);
+    color: var(--parchment);
+    border-color: var(--sepia);
+  }
+
+  .tree-container {
+    overflow-x: auto;
+    padding: 32px 24px 64px;
+  }
+
+  .tree {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 900px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .generation {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+  }
+
+  .gen-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-align: center;
+    padding: 20px 0 8px;
+    border-top: 1px dashed var(--fade);
+    margin-top: 8px;
+  }
+
+  .gen-label:first-child {
+    border-top: none;
+    margin-top: 0;
+  }
+
+  .couples-row {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+  }
+
+  .couple {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: relative;
+  }
+
+  .person-card {
+    background: #fff9ee;
+    border: 1px solid var(--fade);
+    padding: 14px 18px;
+    min-width: 160px;
+    max-width: 200px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    text-align: center;
+  }
+
+  .person-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transition: transform 0.25s;
+  }
+
+  .person-card:hover::before,
+  .person-card.highlighted::before {
+    transform: scaleX(1);
+  }
+
+  .person-card:hover,
+  .person-card.highlighted {
+    box-shadow: 0 4px 20px rgba(139, 105, 20, 0.2);
+    transform: translateY(-2px);
+    border-color: var(--gold);
+  }
+
+  .person-card.ancestor {
+    background: #fef3e2;
+    border-color: var(--rust);
+  }
+
+  .person-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  .person-dates {
+    font-size: 11px;
+    color: var(--sepia);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .person-place {
+    font-size: 10px;
+    color: var(--fade);
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+  }
+
+  .plus-sign {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: var(--rust);
+    padding: 0 8px;
+    align-self: center;
+    flex-shrink: 0;
+  }
+
+  .children-connector {
+    display: flex;
+    justify-content: center;
+    padding: 4px 0;
+  }
+
+  .connector-line {
+    width: 1px;
+    height: 24px;
+    background: var(--line);
+  }
+
+  .children-row {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 0 16px;
+    position: relative;
+  }
+
+  .children-row::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 200px);
+    max-width: 800px;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .child-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .child-connector {
+    width: 1px;
+    height: 16px;
+    background: var(--line);
+  }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 18, 8, 0.6);
+    z-index: 500;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(2px);
+  }
+
+  .modal-overlay.open {
+    display: flex;
+  }
+
+  .modal {
+    background: var(--parchment);
+    border: 1px solid var(--gold);
+    padding: 40px;
+    max-width: 480px;
+    width: 90%;
+    position: relative;
+    animation: modalIn 0.3s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal::before {
+    content: '';
+    position: absolute;
+    top: 6px; left: 6px; right: 6px; bottom: 6px;
+    border: 1px solid var(--fade);
+    pointer-events: none;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 16px; right: 20px;
+    background: none; border: none;
+    font-size: 24px; cursor: pointer;
+    color: var(--sepia);
+    font-family: 'Playfair Display', serif;
+  }
+
+  .modal-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .modal-gen {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+
+  .modal-detail {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--fade);
+    padding: 8px 0;
+    font-size: 14px;
+  }
+
+  .modal-detail span:first-child {
+    color: var(--sepia);
+    font-style: italic;
+  }
+
+  .modal-detail span:last-child {
+    color: var(--ink);
+    text-align: right;
+    max-width: 60%;
+  }
+
+  .ornament {
+    text-align: center;
+    color: var(--gold);
+    font-size: 18px;
+    margin: 20px 0 0;
+    letter-spacing: 8px;
+  }
+
+  footer {
+    text-align: center;
+    padding: 32px;
+    border-top: 1px dashed var(--fade);
+    font-size: 12px;
+    color: var(--fade);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="subtitle">Árvore Genealógica</div>
+  <h1>Família <em>Naves</em></h1>
+  <div class="subtitle">Primeira geração no Brasil — 1653</div>
+</header>
+
+<div class="controls">
+  <button class="gen-btn active" onclick="showAll()">Todas as gerações</button>
+  <button class="gen-btn" onclick="filterGen(1)">1ª — João & Maria</button>
+  <button class="gen-btn" onclick="filterGen(2)">2ª — Filhos</button>
+  <button class="gen-btn" onclick="filterGen(3)">3ª — MG</button>
+  <button class="gen-btn" onclick="filterGen(4,5)">4ª–5ª — Lavras</button>
+  <button class="gen-btn" onclick="filterGen(6,7)">6ª–7ª — Bom Sucesso</button>
+  <button class="gen-btn" onclick="filterGen(8,9,10,11)">8ª–11ª — GO</button>
+</div>
+
+<div class="tree-container">
+  <div class="tree" id="tree"></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="document.getElementById('modalOverlay').classList.remove('open')">×</button>
+    <div class="modal-name" id="mName"></div>
+    <div class="modal-gen" id="mGen"></div>
+    <div id="mDetails"></div>
+    <div class="ornament">✦ ✦ ✦</div>
+  </div>
+</div>
+
+<footer>Pesquisa: Nilson N. Naves · Criação: Jales Naves · Editora Naves, 2025</footer>
+
+<script>
+const data = [
+  {
+    gen: 1,
+    label: "1ª Geração — Primeira geração no Brasil (c. 1653)",
+    couples: [{
+      p1: { name: "João de Almeida Naves", born: "17.12.1624", died: "11.03.1715", place: "Vila de Algodres, Portugal → Santana de Parnaíba, SP", ancestor: true },
+      p2: { name: "Maria da Silva Leite", born: "1636", died: "1715", place: "São Paulo, SP → Santana de Parnaíba, SP", ancestor: true },
+      married: "c. 1653, São Paulo, SP"
+    }]
+  },
+  {
+    gen: 2,
+    label: "2ª Geração — Filhos de João e Maria (São Paulo, SP)",
+    couples: [
+      { p1: { name: "Joana de Almeida Naves", born: "1657, SP", died: "1724, Santana de Parnaíba" }, p2: { name: "Gaspar de Brito Silva", born: "1657, Santos", died: "1703, SP" } },
+      { p1: { name: "Izabel da Silva Naves", born: "1670, Santana de Parnaíba", died: "03.02.1733, Araçariguama" }, p2: { name: "Vicente Gonçalves de Almeida", born: "Santana de Parnaíba", died: "12.11.1731" } },
+      { p1: { name: "Florência da Silva Naves", born: "1676, Santana de Parnaíba", died: "1740" }, p2: { name: "Domingos Lopes da Silva", born: "1672, Macacu/RJ", died: "Santana de Parnaíba" } },
+      { p1: { name: "Turíbia de Almeida Naves", born: "1678, Santana de Parnaíba", died: "20.01.1734" }, p2: { name: "José Velho Moreira", born: "1658, Santana de Parnaíba", died: "26.12.1728" } },
+    ]
+  },
+  {
+    gen: 3,
+    label: "3ª Geração — Expansão para Minas Gerais (Lavras, MG)",
+    couples: [{
+      p1: { name: "João Naves Damasceno", born: "1760, Lavras, MG", died: "30.05.1831, Bom Sucesso, MG" },
+      p2: { name: "Anna Vittoria de São Thomé", born: "1761, Prado, MG", died: "19.05.1841, Bom Sucesso, MG" },
+      married: "24.02.1786, Lavras, MG"
+    }]
+  },
+  {
+    gen: 4,
+    label: "4ª Geração — Filhos de João e Anna (Lavras, MG)",
+    couples: [
+      { p1: { name: "Manoel Antônio Naves", born: "30.06.1805, Lavras", died: "09.01.1877, Bom Sucesso" }, p2: { name: "Anna Rosa Sampaio da Silva", born: "1806, Bom Sucesso", died: "28.05.1882" }, married: "22.11.1830, Bom Sucesso" },
+      { p1: { name: "Francisco de Sales Naves", born: "1790, Lavras", died: "05.10.1832, Lavras" } },
+      { p1: { name: "Miguel José Naves", born: "1794, Lavras", died: "03.06.1871, Bom Sucesso" } },
+      { p1: { name: "Venâncio José Naves", born: "1796, Lavras", died: "27.06.1885, Monte Carmelo, MG" } },
+    ]
+  },
+  {
+    gen: 5,
+    label: "5ª Geração — Filhos de Manoel e Anna Rosa (Bom Sucesso, MG)",
+    couples: [
+      { p1: { name: "Umbelina Rosa Naves", born: "26.12.1831, Bom Sucesso", died: "14.04.1892" }, p2: { name: "Francisco de Paula Naves", born: "1833, Lavras", died: "10.01.1909, Lavras" } },
+      { p1: { name: "Modesto Antônio Naves", born: "1833, Bom Sucesso" } },
+      { p1: { name: "Teodoro Antônio Naves", born: "1825, Bom Sucesso", died: "Carmo da Cachoeira" } },
+      { p1: { name: "João Antônio Naves", born: "25.10.1842, Bom Sucesso" } },
+    ]
+  },
+  {
+    gen: 6,
+    label: "6ª Geração — Filhos de Umbelina e Francisco (Lavras → Uberlândia)",
+    couples: [
+      { p1: { name: "Evaristo Brasiliense Naves", born: "07.06.1866, Lavras", died: "08.01.1946, Carmo da Cachoeira" } },
+      { p1: { name: "Américo Brasiliense Naves", born: "1868, Lavras", died: "Uberlândia, MG" } },
+      { p1: { name: "Nemésio Brasiliense Naves", born: "Lavras", died: "1978, Uberlândia" } },
+      { p1: { name: "Lindolfo Naves", born: "05.02.1868, Bom Sucesso", died: "10.01.1909, Lavras" } },
+    ]
+  },
+  {
+    gen: 7,
+    label: "7ª Geração — Filhos de Américo (Uberlândia, MG)",
+    couples: [
+      { p1: { name: "Messias Brasiliense Naves", born: "1883, Uberlândia", died: "17.01.1938, Morrinhos, GO" }, p2: { name: "Purcina Maria de Jesus", born: "Uberlândia" }, married: "Uberlândia, MG" },
+      { p1: { name: "Francisco de Paula Naves", born: "20.11.1898, Uberlândia", died: "1988, Itumbiara, GO" } },
+      { p1: { name: "José Américo Naves", born: "1889, Uberlândia", died: "1972, Uberlândia" } },
+      { p1: { name: "Belmira Cândida Naves", born: "24.09.1891, Uberlândia" } },
+    ]
+  },
+  {
+    gen: 8,
+    label: "8ª Geração — Filhos de Messias (Uberlândia → Morrinhos, GO)",
+    couples: [
+      { p1: { name: "Anésia Naves", born: "Morrinhos, GO", died: "Quirinópolis, GO" }, p2: { name: "Antônio Alves da Silva" }, married: "Morrinhos/Quirinópolis, GO" },
+      { p1: { name: "Marcília Rosa Naves", born: "12.03.1908, Uberlândia", died: "02.04.2010, Morrinhos" } },
+      { p1: { name: "Albertina Rosa Naves", born: "13.02.1913, Uberlândia", died: "Morrinhos" } },
+      { p1: { name: "Beraldino Brasiliense Naves", born: "Uberlândia", died: "Morrinhos" } },
+    ]
+  },
+  {
+    gen: 9,
+    label: "9ª Geração — Filhos de Anésia (Quirinópolis, GO)",
+    couples: [
+      { p1: { name: "Gilmar Alves da Silva", born: "02.03.1958, Quirinópolis, GO" }, p2: { name: "Gláucia Ap. Fagundes", born: "14.05.1961, Paranaiguara, GO" } },
+      { p1: { name: "Neusa Aparecida da Silva", born: "06.08.1951, Quirinópolis" } },
+      { p1: { name: "Neyde Aparecida da Silva", born: "06.09.1952, Quirinópolis" } },
+      { p1: { name: "Gilberto Alves da Silva", born: "01.09.1953, Quirinópolis" } },
+    ]
+  },
+  {
+    gen: 10,
+    label: "10ª Geração — Filhos de Gilmar (Quirinópolis/Goiânia, GO)",
+    couples: [
+      { p1: { name: "Fábio Henrique Fagundes Alves", born: "01.08.1985, Goiânia" } },
+      { p1: { name: "Bruno Teodoro Silva", born: "01.05.1989, Quirinópolis" } },
+      { p1: { name: "Rodrigo Teodoro Silva", born: "01.05.1990, Quirinópolis" } },
+    ]
+  }
+];
+
+let visibleGens = null;
+
+function showAll() {
+  visibleGens = null;
+  document.querySelectorAll('.gen-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.gen-btn')[0].classList.add('active');
+  renderTree();
+}
+
+function filterGen(...gens) {
+  visibleGens = gens;
+  document.querySelectorAll('.gen-btn').forEach(b => b.classList.remove('active'));
+  renderTree();
+}
+
+function renderTree() {
+  const tree = document.getElementById('tree');
+  tree.innerHTML = '';
+
+  const filtered = visibleGens ? data.filter(g => visibleGens.includes(g.gen)) : data;
+
+  filtered.forEach(gen => {
+    const genDiv = document.createElement('div');
+    genDiv.className = 'generation';
+
+    const label = document.createElement('div');
+    label.className = 'gen-label';
+    label.textContent = gen.label;
+    genDiv.appendChild(label);
+
+    const couplesRow = document.createElement('div');
+    couplesRow.className = 'couples-row';
+
+    gen.couples.forEach(couple => {
+      const coupleDiv = document.createElement('div');
+      coupleDiv.className = 'couple';
+
+      coupleDiv.appendChild(makeCard(couple.p1, gen.gen));
+
+      if (couple.p2) {
+        const plus = document.createElement('span');
+        plus.className = 'plus-sign';
+        plus.textContent = '+';
+        coupleDiv.appendChild(plus);
+        coupleDiv.appendChild(makeCard(couple.p2, gen.gen));
+      }
+
+      couplesRow.appendChild(coupleDiv);
+    });
+
+    genDiv.appendChild(couplesRow);
+    tree.appendChild(genDiv);
+
+    // Connector
+    if (filtered.indexOf(gen) < filtered.length - 1) {
+      const conn = document.createElement('div');
+      conn.className = 'children-connector';
+      const line = document.createElement('div');
+      line.className = 'connector-line';
+      conn.appendChild(line);
+      tree.appendChild(conn);
+    }
+  });
+}
+
+function makeCard(person, gen) {
+  const card = document.createElement('div');
+  card.className = 'person-card' + (person.ancestor ? ' ancestor' : '');
+
+  const name = document.createElement('div');
+  name.className = 'person-name';
+  name.textContent = person.name;
+
+  card.appendChild(name);
+
+  if (person.born || person.died) {
+    const dates = document.createElement('div');
+    dates.className = 'person-dates';
+    dates.textContent = [person.born && `n. ${person.born}`, person.died && `f. ${person.died}`].filter(Boolean).join(' · ');
+    card.appendChild(dates);
+  }
+
+  if (person.place) {
+    const place = document.createElement('div');
+    place.className = 'person-place';
+    place.textContent = person.place;
+    card.appendChild(place);
+  }
+
+  card.onclick = () => openModal(person, gen);
+  return card;
+}
+
+function openModal(person, gen) {
+  document.getElementById('mName').textContent = person.name;
+  document.getElementById('mGen').textContent = `${gen}ª Geração · Família Naves`;
+
+  const details = [
+    ['Nascimento', person.born],
+    ['Falecimento', person.died],
+    ['Local', person.place],
+  ].filter(d => d[1]);
+
+  document.getElementById('mDetails').innerHTML = details.map(([k, v]) =>
+    `<div class="modal-detail"><span>${k}</span><span>${v}</span></div>`
+  ).join('');
+
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+}
+
+renderTree();
+</script>
+</body>
+</html>
