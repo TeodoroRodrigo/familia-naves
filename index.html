@@ -4,135 +4,237 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Família Naves</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Marcellus+SC&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --parchment: #f5efe0;
-    --ink: #1a1208;
-    --sepia: #8b6914;
-    --rust: #9b3a1a;
-    --gold: #c9921a;
-    --fade: #d4b483;
-    --line: #8b6914aa;
-  }
+:root {
+  --bg: #07060A;
+  --gold: #C9921A;
+  --gold-lt: #E8B84B;
+  --gold-dk: #7A5510;
+  --cream: #F2E6CC;
+  --muted: #967A55;
+  --dim: #2A2018;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--cream);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+}
 
-  body {
-    background: var(--parchment);
-    color: var(--ink);
-    font-family: 'Crimson Pro', serif;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    overflow-x: hidden;
-  }
+/* grain */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999;
+}
 
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 1000;
-  }
+/* radial glow */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 70% 60% at 50% 50%, #16100A 0%, var(--bg) 70%);
+  pointer-events: none; z-index: 0;
+}
 
-  .container {
-    text-align: center;
-    padding: 3rem 2rem;
-    max-width: 640px;
-    width: 100%;
-  }
+.wrap {
+  text-align: center;
+  padding: 3rem 2rem;
+  max-width: 680px;
+  width: 100%;
+  position: relative; z-index: 1;
+  animation: fadeUp 1s ease both;
+}
 
-  h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(2.2rem, 6vw, 3.5rem);
-    color: var(--sepia);
-    letter-spacing: 0.04em;
-    margin-bottom: 0.4rem;
-  }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: none; }
+}
 
-  .subtitle {
-    font-style: italic;
-    font-size: 1.1rem;
-    color: var(--fade);
-    margin-bottom: 3rem;
-  }
+.eyebrow {
+  font-family: 'Marcellus SC', serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.5em;
+  color: var(--gold);
+  opacity: 0.65;
+  margin-bottom: 2rem;
+}
 
-  .divider {
-    width: 80px;
-    height: 1px;
-    background: var(--line);
-    margin: 1.5rem auto;
-  }
+h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(3.5rem, 10vw, 7rem);
+  font-weight: 300;
+  line-height: 0.88;
+  color: var(--cream);
+  letter-spacing: -0.01em;
+  margin-bottom: 0.4rem;
+}
 
-  .nav-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-top: 2rem;
-  }
+h1 em {
+  font-style: italic;
+  color: var(--gold);
+  display: block;
+}
 
-  @media (max-width: 480px) {
-    .nav-grid { grid-template-columns: 1fr; }
-  }
+.rule {
+  width: 90px; height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold), transparent);
+  margin: 1.75rem auto;
+}
 
-  .nav-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.8rem;
-    padding: 2rem 1.5rem;
-    border: 1px solid var(--line);
-    text-decoration: none;
-    color: var(--ink);
-    background: rgba(255,255,255,0.35);
-    transition: background 0.2s, border-color 0.2s;
-  }
+.subtitle {
+  font-size: 1.1rem;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--muted);
+  margin-bottom: 3rem;
+  line-height: 1.6;
+}
 
-  .nav-card:hover {
-    background: rgba(201, 146, 26, 0.1);
-    border-color: var(--gold);
-  }
+/* stats */
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  border: 1px solid var(--dim);
+  margin-bottom: 3rem;
+}
+.stat {
+  padding: 0.9rem 1.75rem;
+  border-right: 1px solid var(--dim);
+}
+.stat:last-child { border-right: none; }
+.stat-n { font-size: 1.6rem; font-weight: 600; color: var(--gold-lt); line-height: 1; display: block; }
+.stat-l { font-size: 0.6rem; font-style: italic; color: var(--muted); letter-spacing: 0.05em; display: block; margin-top: 0.15rem; }
 
-  .nav-card .icon {
-    font-size: 2rem;
-    line-height: 1;
-  }
+/* nav cards */
+.nav-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
 
-  .nav-card .label {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.15rem;
-    color: var(--sepia);
-  }
+@media (max-width: 480px) {
+  .nav-grid { grid-template-columns: 1fr; }
+}
 
-  .nav-card .desc {
-    font-size: 0.9rem;
-    color: var(--fade);
-    font-style: italic;
-  }
+.nav-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2.5rem 1.5rem;
+  border: 1px solid var(--dim);
+  text-decoration: none;
+  color: var(--cream);
+  background: rgba(201,146,26,0.025);
+  position: relative;
+  transition: border-color 0.35s, background 0.35s, box-shadow 0.35s;
+}
+
+/* corner ornaments */
+.nav-card::before {
+  content: '';
+  position: absolute; top: -1px; left: -1px;
+  width: 12px; height: 12px;
+  border-top: 1.5px solid var(--gold-dk);
+  border-left: 1.5px solid var(--gold-dk);
+  transition: border-color 0.35s;
+}
+.nav-card::after {
+  content: '';
+  position: absolute; bottom: -1px; right: -1px;
+  width: 12px; height: 12px;
+  border-bottom: 1.5px solid var(--gold-dk);
+  border-right: 1.5px solid var(--gold-dk);
+  transition: border-color 0.35s;
+}
+
+.nav-card:hover {
+  border-color: var(--gold-dk);
+  background: rgba(201,146,26,0.06);
+  box-shadow: 0 0 35px rgba(201,146,26,0.08);
+}
+.nav-card:hover::before,
+.nav-card:hover::after {
+  border-color: var(--gold);
+}
+
+.card-icon {
+  width: 44px; height: 44px;
+  border: 1px solid var(--dim);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  background: rgba(201,146,26,0.04);
+  transition: border-color 0.35s;
+}
+.nav-card:hover .card-icon { border-color: var(--gold-dk); }
+
+.card-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: var(--cream);
+  letter-spacing: 0.01em;
+}
+
+.card-desc {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+
+footer {
+  position: relative; z-index: 1;
+  margin-top: 3.5rem;
+  text-align: center;
+  font-size: 0.65rem;
+  font-style: italic;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+  animation: fadeUp 1s 0.4s ease both;
+}
 </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Família Naves</h1>
-    <p class="subtitle">Uma história de raízes e caminhos</p>
-    <div class="divider"></div>
+  <div class="wrap">
+    <p class="eyebrow">Brasil · Portugal · 1653 — presente</p>
+    <h1>Família<em>Naves</em></h1>
+    <div class="rule"></div>
+    <p class="subtitle">Uma linhagem de onze gerações — do sertão de Portugal ao coração do cerrado</p>
+
+    <div class="stats">
+      <div class="stat"><span class="stat-n">11</span><span class="stat-l">gerações</span></div>
+      <div class="stat"><span class="stat-n">370</span><span class="stat-l">anos</span></div>
+      <div class="stat"><span class="stat-n">1653</span><span class="stat-l">primeiro registro</span></div>
+    </div>
+
     <nav class="nav-grid">
       <a href="/arvore" class="nav-card">
-        <span class="icon">🌳</span>
-        <span class="label">Árvore Genealógica</span>
-        <span class="desc">Ancestrais e descendentes</span>
+        <div class="card-icon">✦</div>
+        <span class="card-label">Árvore Genealógica</span>
+        <span class="card-desc">11 gerações · ancestrais e descendentes</span>
       </a>
       <a href="/mapa" class="nav-card">
-        <span class="icon">🗺️</span>
-        <span class="label">Mapa de Migração</span>
-        <span class="desc">Origens e deslocamentos</span>
+        <div class="card-icon">◈</div>
+        <span class="card-label">Mapa de Migração</span>
+        <span class="card-desc">Portugal → SP → MG → GO</span>
       </a>
     </nav>
   </div>
+
+  <footer>Editora Naves, 2025 · Pesquisa: Nilson N. Naves · Criação: Jales Naves</footer>
 </body>
 </html>
