@@ -2,7 +2,7 @@
 
 Site interativo com a árvore genealógica e o mapa de migração da Família Naves no Brasil — **11 gerações documentadas, de 1624 até hoje**.
 
-🔗 **[familia-naves.vercel.app](https://familia-naves.vercel.app)** ← substitua pela URL real após o deploy
+🔗 **[familia-naves.vercel.app](https://familia-naves.vercel.app)** 
 
 ---
 
