@@ -221,6 +221,22 @@ body::after {
 .leg { display: flex; align-items: center; gap: 0.5rem; font-size: 0.62rem; letter-spacing: 0.1em; color: var(--muted); }
 .leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
+/* BACK BUTTON */
+.back-btn {
+  position: fixed; top: 1.25rem; left: 1.25rem; z-index: 600;
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  font-family: 'Marcellus SC', serif;
+  font-size: 0.6rem; letter-spacing: 0.25em;
+  color: var(--muted); text-decoration: none;
+  border: 1px solid var(--dim);
+  padding: 0.5rem 0.9rem 0.5rem 0.7rem;
+  background: rgba(6,7,10,0.85);
+  backdrop-filter: blur(8px);
+  transition: color 0.25s, border-color 0.25s;
+}
+.back-btn:hover { color: var(--gold); border-color: var(--gold-dk); }
+.back-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
 /* FOOTER */
 footer {
   text-align: center;
@@ -246,6 +262,12 @@ footer p { font-size: 0.78rem; font-style: italic; color: var(--muted); line-hei
   <div class="sbar"><span class="sbar-n">8</span><span class="sbar-l">cidades</span></div>
 </div>
 
+<a href="/" class="back-btn" title="Início">
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+    <path d="M10 13L5 8l5-5"/>
+  </svg>
+  Início
+</a>
 <div class="layout">
   <aside class="timeline">
     <div class="tl-head">Linha do Tempo</div>
